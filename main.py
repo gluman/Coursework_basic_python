@@ -39,8 +39,23 @@ class Yandex:
     def __init__(self, token):
         self.token = token
 
-def create_ya_folder():
-    pass
+    def upload_fotos(self):
+        pass
+    def create_ya_folder(self):
+        pass
+
+
+def upload_from_vk_to_ya(vk_json, ya_obj, fotos_count):
+    upload_fotos_list = []
+    upload_fotos_dict = {}
+    for item in vk_json['response']['items']:
+        upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
+        for foto in item['sizes']:
+            if foto['type'] == 'w':
+                upload_fotos_dict['upload_link'] = foto['url']
+                upload_fotos_dict['size'] = foto['type']
+                upload_fotos_list.append(upload_fotos_dict)
+
 
 
 
@@ -49,11 +64,15 @@ if __name__ == '__main__':
     # ya_token = input('Введите ключ, полученный с полигона Yandex:')
     # access_token = 'access_token'
     # user_id = 'id29252022'
-    nic_name = 'id29252022' # my account
+    nic_name = 'glumovav' # my account
     foto_count = 5 #
-
     vk = VK(access_token, nic_name)
+    ya = Yandex()
     pp(vk.users_info())
     vk_user = vk.users_info()
     vk_user_id = vk_user['response'][0]['id']
-    pp(vk.fotos_get(foto_count, vk_user_id))
+    res_fotos = vk.fotos_get(foto_count, vk_user_id)
+
+    result = upload_from_vk_to_ya(res_fotos, ya, foto_count)
+
+
