@@ -2,7 +2,7 @@ from settings import base_ya_link as ya_link
 from settings import TOKEN as ya_token
 from settings import base_vk_link as vk_link
 from settings import access_token
-import datetime
+import datetime as d
 import requests
 from pprint import pprint as pp
 
@@ -40,32 +40,65 @@ class Yandex:
     def __init__(self, token):
         self.token = token
 
+    def get_headers(self):
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': f'OAuth {self.token}'
+        }
+
     def upload_fotos(self):
         pass
     def _get_upload_link(self, path):
         uri = '/v1/disk/resource/upload/'
         request_url = self.base_host + uri
-        params = {'path': path, 'overwrite': True}
-        response = requests.get(request_url, headers=self.get_headers(), params=params)
+        params = {'path': path,
+                  'overwrite': True}
+        response = requests.get(request_url, params=params, headers=self.get_headers())
         pp(response.json())
         return response.json()['href']
 
-
-
     def create_ya_folder(self):
+        uri = '/v1/disk/resource/'
+        request_url = self.base_host + uri
+        path = str('/backup/' + vk_user_id +'_'+ d.utcnow)
+        params = {'path': path}
+        response = requests.put(request_url, params=params, headers=self.get_headers())
+        if response.status_code == 201:
+            return path
+        else:
+            pp(response.json())
+
+    def check_exist_file(self, file_name):
         pass
+
+    def upload_to_ya(self,  url):
+        uri = '/v1/disk/resource/upload/'
+        request_url = self.base_host + uri
+        ya_path = self.create_ya_folder()
+        if type(ya_path) is str:
+            params = {'url': url, 'path': ya_path}
+            response = requests.post(request_url, params=params, headers=self.get_headers())
+            pp(response.json())
+            return
 
 
 def upload_from_vk_to_ya(vk_json, ya_obj, fotos_count):
+    count = 0 # счетчие количества фото
     upload_fotos_list = []
     upload_fotos_dict = {}
     for item in vk_json['response']['items']:
-        upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
-        for foto in item['sizes']:
-            if foto['type'] == 'w':
-                upload_fotos_dict['upload_link'] = foto['url']
-                upload_fotos_dict['size'] = foto['type']
-                upload_fotos_list.append(upload_fotos_dict)
+        if count < fotos_count:
+            upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
+            for foto in item['sizes']:
+                if foto['type'] == 'w':
+                    upload_fotos_dict['upload_link'] = foto['url']
+                    upload_fotos_dict['size'] = foto['type']
+                    upload_fotos_list.append(upload_fotos_dict)
+                    count += 1
+                    ya.upload_to_ya(upload_fotos_dict['upload_link'])
+
+
+
 
 
 
@@ -83,7 +116,6 @@ if __name__ == '__main__':
     vk_user = vk.users_info()
     vk_user_id = vk_user['response'][0]['id']
     res_fotos = vk.fotos_get(foto_count, vk_user_id)
-
-    result = upload_from_vk_to_ya(res_fotos, ya, foto_count)
+    upload_from_vk_to_ya(res_fotos, ya, foto_count)
 
 
