@@ -1,4 +1,0 @@
-# yandex base link
-base_ya_link = ''
-# Service access VK key
-base_vk_link = 'https://api.vk.com/method/'

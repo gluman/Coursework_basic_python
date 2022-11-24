@@ -5,7 +5,8 @@ from settings import access_token
 import datetime as d
 import requests
 from pprint import pprint as pp
-
+from alive_progress import alive_bar
+import time
 
 class VK:
 
@@ -92,32 +93,38 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
     for item in vk_json['response']['items']:
         if count <= fotos_count:
             upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
+            link = ''
+            size_type = ''
             for size in item['sizes']:
                 if size['type'] == 'w':
-                    upload_fotos_dict['upload_link'] = size['url']
-                    upload_fotos_dict['size'] = size['type']
-                    upload_fotos_list.append(upload_fotos_dict)
+                    link = size['url']
+                    size_type = size['type']
+                    break
                 elif size['type'] == 'z':
-                    upload_fotos_dict['upload_link'] = size['url']
-                    upload_fotos_dict['size'] = size['type']
-                    upload_fotos_list.append(upload_fotos_dict)
-                else
-                    size = dict(sorted(item['size']))
+                    link = size['url']
+                    size_type = size['type']
+
+
+            upload_fotos_dict['upload_link'] = link
+            upload_fotos_dict['size'] = size_type
+            upload_fotos_list.append(upload_fotos_dict)
             count += 1
             ya.upload_to_ya(upload_fotos_dict['upload_link'], upload_fotos_dict['file name'])
 
 
 if __name__ == '__main__':
-    # vk_id = input('Введите id пользователя VK:')
-    # ya_token = input('Введите ключ, полученный с полигона Yandex:')
-    # access_token = 'access_token'
-    # user_id = 'id29252022'
-    nic_name = 'glumovav'  # my account
-    foto_count = 4  #
-    vk = VK(access_token, nic_name)
+    vk_name = input('Введите id или nik_name пользователя VK:')
+    if vk_name.startswith('id'):
+        vk_user_id = vk_name
+        vk = VK(access_token, vk_name)  ### fix it, нужно создавать объект и по nic и по id
+    else:
+        vk = VK(access_token, vk_name)
+        vk_user = vk.users_info()
+        vk_user_id = vk_user['response'][0]['id']
+
+    foto_count = int(input('Введите количество фотографий для копирования (5 - по умолчанию)'))
     ya = Yandex(ya_token)
-    pp(vk.users_info())
-    vk_user = vk.users_info()
-    vk_user_id = vk_user['response'][0]['id']
+
+
     res_fotos = vk.fotos_get(foto_count, vk_user_id)
     upload_from_vk_to_ya(res_fotos, foto_count)
