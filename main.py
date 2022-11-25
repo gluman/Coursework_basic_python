@@ -113,14 +113,10 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
 
 
 if __name__ == '__main__':
-    vk_name = input('Введите id или nik_name пользователя VK:')
+    vk_name = input('Введите id пользователя VK:')
     if vk_name.startswith('id'):
-        vk_user_id = vk_name
+        vk_user_id = vk_name[2:]
         vk = VK(access_token, vk_name)  ### fix it, нужно создавать объект и по nic и по id
-    else:
-        vk = VK(access_token, vk_name)
-        vk_user = vk.users_info()
-        vk_user_id = vk_user['response'][0]['id']
 
     foto_count = int(input('Введите количество фотографий для копирования (5 - по умолчанию)'))
     ya = Yandex(ya_token)
