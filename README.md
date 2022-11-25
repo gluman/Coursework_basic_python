@@ -9,11 +9,11 @@
 #### Yandex base link for API:
 base_ya_link = 'https://cloud-api.yandex.net/'
 #### yandex token: - you must generate this token on yandex source
-TOKEN = ''
+Y_TOKEN = ''
 #### VK base link for API:
 base_vk_link = 'https://api.vk.com/method/'
 #### vk access token: - you must generate this token in vk application management source
-access_token = ''
+VK_TOKEN = ''
 ### 3. run main.py and insert params
 
 ### P.S. Sorry for my English.

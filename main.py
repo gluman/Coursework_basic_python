@@ -1,7 +1,7 @@
 from settings import base_ya_link as ya_link
-from settings import TOKEN as ya_token
+from settings import Y_TOKEN as ya_token
 from settings import base_vk_link as vk_link
-from settings import access_token
+from settings import VK_TOKEN as vk_token
 import datetime as d
 import requests
 from pprint import pprint as pp
@@ -113,14 +113,16 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
 
 
 if __name__ == '__main__':
-    vk_name = input('Введите id пользователя VK:')
+    print('''
+    Before you start you must read README.md file
+    ''')
+    vk_name = input('Input id for VK user:')
     if vk_name.startswith('id'):
         vk_user_id = vk_name[2:]
-        vk = VK(access_token, vk_name)  ### fix it, нужно создавать объект и по nic и по id
 
-    foto_count = int(input('Введите количество фотографий для копирования (5 - по умолчанию)'))
+    foto_count = int(input('Input count foto copy (5 - default)'))
     ya = Yandex(ya_token)
-
+    vk = VK(vk_token, vk_user_id)
 
     res_fotos = vk.fotos_get(foto_count, vk_user_id)
     upload_from_vk_to_ya(res_fotos, foto_count)
