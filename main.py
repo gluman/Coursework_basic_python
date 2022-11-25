@@ -8,6 +8,7 @@ from pprint import pprint as pp
 from alive_progress import alive_bar
 import time
 
+
 class VK:
 
     def __init__(self, access_token, user_id, version='5.131'):
@@ -95,32 +96,37 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
             upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
             link = ''
             size_type = ''
+
+            sizing = []
+            for y in item['sizes']:
+                for i in y['type']:
+                    sizing.append(i)
+            sizing.sort()
+
             for size in item['sizes']:
-                if size['type'] == 'w':
+                if size['type'] == sizing[-1]:
                     link = size['url']
                     size_type = size['type']
                     break
-                elif size['type'] == 'z':
-                    link = size['url']
-                    size_type = size['type']
-
 
             upload_fotos_dict['upload_link'] = link
             upload_fotos_dict['size'] = size_type
             upload_fotos_list.append(upload_fotos_dict)
             count += 1
-            ya.upload_to_ya(upload_fotos_dict['upload_link'], upload_fotos_dict['file name'])
-
+            ya.upload_to_ya(upload_fotos_dict.pop('upload_link'), upload_fotos_dict['file name'])
+            pp(upload_fotos_dict)
 
 if __name__ == '__main__':
     print('''
     Before you start you must read README.md file
     ''')
-    vk_name = input('Input id for VK user:')
+    # vk_name = input('Input id for VK user:')
+    vk_name = 'id29252022'
     if vk_name.startswith('id'):
         vk_user_id = vk_name[2:]
 
     foto_count = int(input('Input count foto copy (5 - default)'))
+
     ya = Yandex(ya_token)
     vk = VK(vk_token, vk_user_id)
 
