@@ -5,7 +5,8 @@ from settings import VK_TOKEN as vk_token
 import datetime as d
 import requests
 from pprint import pprint as pp
-from alive_progress import alive_bar
+from progressbar import ProgressBar
+
 import time
 
 
@@ -73,7 +74,7 @@ class Yandex:
         else:
             pp(response.json())
 
-    def check_exist_file(self, file_name):
+    def check_exists_file_and(self, file_name, path):  # fix it
         pass
 
     def upload_to_ya(self, url, file_name):
@@ -83,52 +84,61 @@ class Yandex:
         if type(ya_path) is str:
             params = {'url': url, 'path': ya_path}
             response = requests.post(request_url, params=params, headers=self.get_headers())
-            pp(response.json())
-            return
+            # pp(response.json())
+            return response.status_code
+
+
+def json_file(json_file):  # fix it
+    pass
 
 
 def upload_from_vk_to_ya(vk_json, fotos_count=5):
     count = 1  # счетчик количества фото
     upload_fotos_list = []
     upload_fotos_dict = {}
+    l = len(vk_json['response']['items'])
+    if l < fotos_count:
+        cnt_foto = l
+    else:
+        cnt_foto = fotos_count
+    progress_foto = round(100 / l, 0)
+    print('Starting copy files from VK to YA...')
+    pbar = ProgressBar().start()
+
     for item in vk_json['response']['items']:
-        if count <= fotos_count:
+        if count <= cnt_foto:
+
             upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
             link = ''
             size_type = ''
-
-            sizing = []
-            for y in item['sizes']:
-                for i in y['type']:
-                    sizing.append(i)
+            sizing = [y['type'] for y in item['sizes']]
             sizing.sort()
-
             for size in item['sizes']:
                 if size['type'] == sizing[-1]:
                     link = size['url']
                     size_type = size['type']
                     break
-
             upload_fotos_dict['upload_link'] = link
             upload_fotos_dict['size'] = size_type
             upload_fotos_list.append(upload_fotos_dict)
-            count += 1
             ya.upload_to_ya(upload_fotos_dict.pop('upload_link'), upload_fotos_dict['file name'])
-            pp(upload_fotos_dict)
+            pbar.update(progress_foto * count)
+            time.sleep(3)
+            count += 1
+    pbar.finish()
+    print('Complete.')
+
 
 if __name__ == '__main__':
-    print('''
-    Before you start you must read README.md file
-    ''')
+    print('Before you start you must read README.md file!!!')
     # vk_name = input('Input id for VK user:')
     vk_name = 'id29252022'
     if vk_name.startswith('id'):
         vk_user_id = vk_name[2:]
 
-    foto_count = int(input('Input count foto copy (5 - default)'))
+    foto_count = int(input('Input count foto copy (5 - default): '))
 
     ya = Yandex(ya_token)
     vk = VK(vk_token, vk_user_id)
-
     res_fotos = vk.fotos_get(foto_count, vk_user_id)
     upload_from_vk_to_ya(res_fotos, foto_count)
