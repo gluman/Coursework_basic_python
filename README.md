@@ -15,5 +15,6 @@ base_vk_link = 'https://api.vk.com/method/'
 #### vk access token: - you must generate this token in vk application management source
 VK_TOKEN = ''
 ### 3. run main.py and insert params
+### For questions mail-to: gluman@yandex.ru
 
 ### P.S. Sorry for my English.

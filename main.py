@@ -24,10 +24,10 @@ class VK:
         response = requests.get(url, params={**self.params, **params})
         return response.json()
 
-    def fotos_get(self, f_count, user_id):
+    def fotos_get(self, f_count, user_id, album='profile'):
         url = vk_link + 'photos.get'
         params = {'owner_id': user_id,
-                  'album_id': 'profile',
+                  'album_id': album,
                   'extended': '1',
                   'photo_sizes': '1',
                   'count': f_count
@@ -63,7 +63,7 @@ class Yandex:
         pp(response.json())
         return response.json()['href']
 
-    def create_ya_folder(self):
+    def get_ya_folder(self):
         uri = 'v1/disk/resources/'
         request_url = self.base_host + uri
         path = str(vk_user_id) + '_' + str(d.date.today())
@@ -74,17 +74,24 @@ class Yandex:
         else:
             pp(response.json())
 
-    def check_exists_file_and(self, file_name, path):  # fix it
-        pass
+    def check_exists_file(self, path_name, file_name):  # fix it
+        uri = 'v1/disk/resources/'
+        request_url = self.base_host + uri
+        params = {'path': path_name + '/' + file_name}
+        response = requests.get(request_url, params=params, headers=self.get_headers())
+        if response.status_code == 200:
+            return file_name + '_' + str(d.date.today())
+        else:
+            return file_name
+
 
     def upload_to_ya(self, url, file_name):
         uri = 'v1/disk/resources/upload/'
         request_url = self.base_host + uri
-        ya_path = self.create_ya_folder() + '/' + file_name
+        ya_path = self.get_ya_folder() + '/' + file_name
         if type(ya_path) is str:
             params = {'url': url, 'path': ya_path}
             response = requests.post(request_url, params=params, headers=self.get_headers())
-            # pp(response.json())
             return response.status_code
 
 
@@ -107,8 +114,8 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
 
     for item in vk_json['response']['items']:
         if count <= cnt_foto:
-
-            upload_fotos_dict['file name'] = str(item['likes']['count']) + '.jpeg'
+            ya_path = ya.get_ya_folder()
+            upload_fotos_dict['file name'] = ya.check_exists_file(ya_path, str(item['likes']['count']) + '.jpeg')
             link = ''
             size_type = ''
             sizing = [y['type'] for y in item['sizes']]
@@ -120,8 +127,10 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
                     break
             upload_fotos_dict['upload_link'] = link
             upload_fotos_dict['size'] = size_type
+            ya.upload_to_ya(upload_fotos_dict['upload_link'], upload_fotos_dict['file name'])
+            upload_fotos_dict.pop('upload_link')
             upload_fotos_list.append(upload_fotos_dict)
-            ya.upload_to_ya(upload_fotos_dict.pop('upload_link'), upload_fotos_dict['file name'])
+
             pbar.update(progress_foto * count)
             time.sleep(3)
             count += 1
