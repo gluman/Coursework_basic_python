@@ -82,7 +82,7 @@ class Yandex:
         res = response.json()
         if response.status_code == 200:
             f_name = res['name'].split('.')
-            if '_' in f_name[0]:
+            if len(f_name[0].split('_')) > 2:
                 p1_name = f_name[0].split('_')  # f_name[1] is .jpeg
                 if len(p1_name) > 2:
                     p1_name[2] = '_' + str(int(p1_name[2]) + 1)
@@ -90,10 +90,9 @@ class Yandex:
                 else:
                     self.check_exist_file(path_name, p1_name.join() + '_1' + '.' + f_name[1])
             else:
-                self.check_exist_file(path_name, f_name[0] + '_' + str(d.date.today()) + '.' + f_name[1])
+                self.check_exist_file(path_name, f_name[0] + '_' + str(d.date.today()) + '.' + f_name[1])  # fix it. возвращает значение сюдаже, а нужно где вызывается. нужно поменять всю конструкцию на while
         else:
             return file_name
-
 
     def upload_to_ya(self, url, file_name):
         uri = 'v1/disk/resources/upload/'
@@ -154,8 +153,24 @@ if __name__ == '__main__':
     vk_name = 'id29252022'
     if vk_name.startswith('id'):
         vk_user_id = vk_name[2:]
+    foto_count = input('Input foto count for copy (Enter to default = 5): ')
 
-    foto_count = int(input('Input count foto copy (5 - default): '))
+    while type(foto_count) != int or foto_count <= 0:
+        try:
+            foto_count = int(foto_count)
+        except ValueError:
+            if foto_count == '':
+                print('count = 5')
+                foto_count = 5
+            else:
+                print('You must input integer count > 0')
+                foto_count = input('Input foto count for copy (Enter to default = 5): ')
+        else:
+            if foto_count > 0:
+                break
+            else:
+                print('You must input integer count > 0')
+                foto_count = input('Input foto count for copy (Enter to default = 5): ')
 
     ya = Yandex(ya_token)
     vk = VK(vk_token, vk_user_id)
