@@ -10,6 +10,7 @@ from settings import VK_TOKEN as vk_token
 from settings import Y_TOKEN as ya_token
 from settings import base_vk_link as vk_link
 from settings import base_ya_link as ya_link
+import yadisk
 
 
 class VK:
@@ -53,9 +54,6 @@ class Yandex:
             'Authorization': f'OAuth {self.token}'
         }
 
-    def upload_fotos(self):
-        pass
-
     def _get_upload_link(self, path):
         uri = 'v1/disk/resources/upload/'
         request_url = self.base_host + uri
@@ -76,7 +74,12 @@ class Yandex:
         else:
             pp(response.json())
 
-    def check_exist_file_and_get_name(self, path_name, file_name):  # fix it
+    def check_exist_file_and_get_name(self, path_name, file_name):
+        """
+        на вход путь и имя файла на я.диске
+        на выход новое имя файла, если файл с таким именем был или тоже имя если не был
+        имя формируется следующим образом: кол-во лайкой _ дата _ порядоковый номер
+        """
         get = True
         while get:
             uri = 'v1/disk/resources/'
@@ -95,7 +98,7 @@ class Yandex:
                         p_name.append('2' + '.' + f_name[1])
                         file_name = '_'.join(p_name)
                 else:
-                   file_name = f_name[0] + '_' + str(d.date.today()) + '.' + f_name[1]
+                    file_name = f_name[0] + '_' + str(d.date.today()) + '.' + f_name[1]
             else:
                 get = False
         return file_name
@@ -110,19 +113,30 @@ class Yandex:
             return response.status_code
 
 
-def json_file(data, path, file_name):  # fix it
-    with open(file_name, "w") as write_file:
-        json.dump(data, write_file)
-        upload_url = ya._get_upload_link(path + '/' + file_name)
-        response = ya.upload_to_ya(upload_url, file_name)
-        if response == 200:
-            print("Create json file complete")
+def json_file(data, path, file_name):
+    """
+    Здесь используется библиотека от yandex
+    :param data: созданный ранее список
+    :param path: путь на я диске
+    :param file_name: имя локального файла
+    :return:
+    """
+    y = yadisk.YaDisk(token=ya_token)
+    with open(file_name + '.json', "w") as wf:
+        json.dump(data, wf)
+        wf.close()
+        y.upload(file_name + '.json', path + '/' + ya.check_exist_file_and_get_name(path, file_name + '.json'))
+    return
 
 
 def upload_from_vk_to_ya(vk_json, fotos_count=5):
+    """
+    :param vk_json: ответ от vk в формате json
+    :param fotos_count: количество фото для копирования
+    """
     count = 1  # счетчик количества фото
     upload_fotos_list = []
-    upload_fotos_dict = {}
+
     l = len(vk_json['response']['items'])
     if l < fotos_count:
         cnt_foto = l
@@ -131,11 +145,12 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
     progress_foto = round(100 / l, 0)
     print('Starting copy files from VK to YA...')
     pbar = ProgressBar().start()
-
     for item in vk_json['response']['items']:
         if count <= cnt_foto:
+            upload_fotos_dict = {}
             ya_path = ya.get_ya_folder()
             foto_name = str(item['likes']['count']) + '.jpeg'
+
             upload_fotos_dict['file name'] = ya.check_exist_file_and_get_name(ya_path, foto_name)
             link = ''
             size_type = ''
@@ -149,7 +164,6 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
             upload_fotos_dict['upload_link'] = link
             upload_fotos_dict['size'] = size_type
             ya.upload_to_ya(upload_fotos_dict['upload_link'], upload_fotos_dict['file name'])
-
             upload_fotos_dict.pop('upload_link')
             upload_fotos_list.append(upload_fotos_dict)
             pbar.update(progress_foto * count)
@@ -162,13 +176,17 @@ def upload_from_vk_to_ya(vk_json, fotos_count=5):
 
 if __name__ == '__main__':
     print('Before you start you must read README.md file!!!')
-    # vk_name = input('Input id for VK user:')
-    vk_name = 'id29252022'
+    vk_name = input('Input id for VK user:')
+    # vk_name = 'id29252022'
+    ya_token = input('Input yandex token:')
     if vk_name.startswith('id'):
         vk_user_id = vk_name[2:]
     foto_count = input('Input foto count for copy (Enter to default = 5): ')
 
     while type(foto_count) != int or foto_count <= 0:
+        """
+        проверка корректности ввода
+        """
         try:
             foto_count = int(foto_count)
         except ValueError:
